@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - Site de Jeu Vidéo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="chat-header">
+        <h1>Chat du Jeu</h1>
+        <nav>
+            <ul>
+                <li><a href="/">Accueil</a></li>
+                <li><a href="/logout">Déconnexion</a></li>
+            </ul>
+        </nav>
+    </header>
+    <div id="chat-container">
+        <aside id="channels">
+            <div id="server-info">
+                <h3>EpicGame</h3>
+            </div>
+            <div id="channel-list">
+                <h4>Canaux textuels</h4>
+                <ul>
+                    <li class="active">#general</li>
+                    <li>#game-talk</li>
+                    <li>#help</li>
+                </ul>
+            </div>
+        </aside>
+        <main id="chat-main">
+            <div id="messages">
+                <!-- Messages will be inserted here -->
+            </div>
+            <div id="typing-indicator" style="display: none;"></div>
+            <form id="message-form">
+                <div id="toolbar">
+                    <button type="button" id="attach-btn">+</button>
+                    <div id="attach-menu" class="hidden">
+                        <button type="button" class="menu-item" data-type="image">📷 Photo</button>
+                        <button type="button" class="menu-item" data-type="video">🎥 Vidéo</button>
+                    </div>
+                </div>
+                <input id="message-input" type="text" placeholder="Tapez votre message..." autocomplete="off">
+                <input type="file" id="file-input" style="display: none;">
+                <button type="submit">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z" fill="currentColor"/>
+                    </svg>
+                </button>
+            </form>
+        </main>
+        <aside id="members">
+            <h4>Membres en ligne - 1</h4>
+            <ul>
+                <li>
+                    <div class="avatar">
+                        <div class="status online"></div>
+                    </div>
+                    <span>Vous</span>
+                </li>
+            </ul>
+        </aside>
+    </div>
+    <div id="reaction-popup" class="hidden">
+        <div class="reaction-options">
+            <span data-emoji="👍">👍</span>
+            <span data-emoji="👎">👎</span>
+            <span data-emoji="❤️">❤️</span>
+            <span data-emoji="😂">😂</span>
+            <span data-emoji="😮">😮</span>
+            <span data-emoji="😢">😢</span>
+            <span data-emoji="😡">😡</span>
+            <span data-emoji="🔥">🔥</span>
+        </div>
+    </div>
+    <script>
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user) window.location = '/login';
+    </script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="chat.js"></script>
+</body>
+</html>
