@@ -13,6 +13,7 @@
             <nav>
                 <ul>
                     <li><a href="/">Accueil</a></li>
+                    <li><a href="/profile">Mon Profil</a></li>
                     <li><a href="/login" class="cta-link">Se Connecter</a></li>
                 </ul>
             </nav>
@@ -23,7 +24,7 @@
             <div class="container">
                 <h2>Rejoignez la Communauté EpicGame</h2>
                 <p>Découvrez un monde de jeu immersif et connectez-vous avec d'autres joueurs passionnés dans notre chat en temps réel.</p>
-                <a href="chat.html" class="btn-primary">Commencer le Chat</a>
+                <a href="/me" class="btn-primary">Commencer le Chat</a>
             </div>
         </section>
         <section class="features">
@@ -49,7 +50,7 @@
             <div class="container">
                 <h3>Prêt à Jouer ?</h3>
                 <p>Rejoignez le chat maintenant et plongez dans l'aventure !</p>
-                <a href="chat.html" class="btn-secondary">Accéder au Chat</a>
+                <a href="/me" class="btn-secondary">Accéder au Chat</a>
             </div>
         </section>
     </main>
@@ -58,5 +59,17 @@
             <p>&copy; 2023 EpicGame. Tous droits réservés.</p>
         </div>
     </footer>
+    <script>
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (user) {
+            const nav = document.querySelector('nav ul');
+            nav.innerHTML = `
+                <li><a href="/">Accueil</a></li>
+                <li><a href="/profile">Mon Profil</a></li>
+                <li><a href="/me">Chat</a></li>
+                <li><a href="/logout">Déconnexion</a></li>
+            `;
+        }
+    </script>
 </body>
 </html>

@@ -29,6 +29,7 @@
                     <li>#help</li>
                 </ul>
             </div>
+            <div id="user-profile-channel"></div>
         </aside>
         <main id="chat-main">
             <div id="messages">
@@ -39,12 +40,13 @@
                 <div id="toolbar">
                     <button type="button" id="attach-btn">+</button>
                     <div id="attach-menu" class="hidden">
-                        <button type="button" class="menu-item" data-type="image">📷 Photo</button>
-                        <button type="button" class="menu-item" data-type="video">🎥 Vidéo</button>
+                        <button type="button" class="menu-item" data-type="image">Photo</button>
+                        <button type="button" class="menu-item" data-type="video">Vidéo</button>
                     </div>
                 </div>
                 <input id="message-input" type="text" placeholder="Tapez votre message..." autocomplete="off">
-                <input type="file" id="file-input" style="display: none;">
+                <div id="attachment-preview"></div>
+                <input type="file" id="file-input" multiple style="display: none;">
                 <button type="submit">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z" fill="currentColor"/>
@@ -76,11 +78,45 @@
             <span data-emoji="🔥">🔥</span>
         </div>
     </div>
+    <div id="context-menu" class="hidden">
+        <div id="context-options"></div>
+    </div>
+    <div id="reactions-popup" class="hidden" onclick="closeReactionsPopup()">
+        <div class="popup-content" onclick="event.stopPropagation()">
+            <button id="close-reactions-popup" class="close-modal">×</button>
+            <h3>Réactions</h3>
+            <div id="reactions-list"></div>
+        </div>
+    </div>
+    <div id="image-modal" class="hidden">
+        <div class="modal-overlay" onclick="closeImageModal()"></div>
+        <div class="modal-content">
+            <button class="nav-arrow left-arrow" onclick="prevMedia()">‹</button>
+            <div id="modal-media"></div>
+            <button class="nav-arrow right-arrow" onclick="nextMedia()">›</button>
+            <button class="close-modal" onclick="closeMediaModal()">×</button>
+        </div>
+    </div>
+    <div id="user-profile-popup" class="hidden">
+        <div id="profile-content">
+            <div id="profile-banner"></div>
+            <div id="profile-info">
+                <div id="profile-avatar"></div>
+                <h2 id="profile-username"></h2>
+                <p id="profile-bio"></p>
+            </div>
+        </div>
+    </div>
     <script>
         const user = JSON.parse(localStorage.getItem('user'));
         if (!user) window.location = '/login';
     </script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="chat.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            updateUserProfileChannel();
+        });
+    </script>
 </body>
 </html>
