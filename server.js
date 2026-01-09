@@ -5,6 +5,8 @@ const mysql = require('mysql2/promise');
 const cookieParser = require('cookie-parser');
 const cookie = require('cookie');
 const multer = require('multer');
+const sharp = require('sharp');
+const path = require('path');
 const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http, {
@@ -177,28 +179,32 @@ app.post('/profile', requireAuth, upload.any(), async (req, res) => {
         }
         const banner = req.files.find(f => f.fieldname === 'banner');
         if (banner) {
+            const imagePath = path.join(__dirname, 'temp', banner.filename);
+            const metadata = await sharp(imagePath).metadata();
+            const originalW = metadata.width;
+            const originalH = metadata.height;
+            const w = 600 / bannerZoom;
+            const h = w * 0.25;
+            const left_offset = (bannerPosX / 100) * 600 - (bannerPosX / 100) * w;
+            const top_offset = (bannerPosY / 100) * 150 - (bannerPosY / 100) * h;
+            const x1 = 100 - left_offset;
+            const y1 = 25 - top_offset;
+            const x2 = 500 - left_offset;
+            const y2 = 125 - top_offset;
+            const scale = w / originalW;
+            const cropLeft = Math.max(0, x1 / scale);
+            const cropTop = Math.max(0, y1 / scale);
+            const cropWidth = Math.min(originalW - cropLeft, (x2 - x1) / scale);
+            const cropHeight = Math.min(originalH - cropTop, (y2 - y1) / scale);
+            const croppedFilename = 'cropped_' + Date.now() + '_' + banner.filename;
+            const croppedPath = path.join(__dirname, 'uploads', croppedFilename);
+            await sharp(imagePath).extract({ left: Math.round(cropLeft), top: Math.round(cropTop), width: Math.round(cropWidth), height: Math.round(cropHeight) }).toFile(croppedPath);
             updates.push('banner = ?');
-            values.push(banner.filename);
+            values.push(croppedFilename);
         }
         if (bio !== undefined) {
             updates.push('bio = ?');
             values.push(bio);
-        }
-        if (bannerZoom !== undefined) {
-            updates.push('banner_zoom = ?');
-            values.push(parseFloat(bannerZoom));
-        }
-        if (bannerPosX !== undefined) {
-            updates.push('banner_pos_x = ?');
-            values.push(parseFloat(bannerPosX));
-        }
-        if (bannerPosY !== undefined) {
-            updates.push('banner_pos_y = ?');
-            values.push(parseFloat(bannerPosY));
-        }
-        if (bannerRotate !== undefined) {
-            updates.push('banner_rotate = ?');
-            values.push(parseInt(bannerRotate));
         }
         if (updates.length > 0) {
             const query = `UPDATE users SET ${updates.join(', ')} WHERE id = ?`;

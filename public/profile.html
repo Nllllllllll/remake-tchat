@@ -62,17 +62,9 @@
                 bannerRotate = data.banner_rotate || 0;
                 if (data.banner) {
                     document.querySelector('.banner-container').style.backgroundImage = `url('/uploads/${data.banner}')`;
-                    document.querySelector('.banner-container').style.backgroundSize = `${600 / bannerZoom}px auto`;
-                    document.querySelector('.banner-container').style.backgroundPosition = `${bannerPosX}% ${bannerPosY}%`;
-                    document.querySelector('.banner-container').style.transform = `rotate(${bannerRotate}deg)`;
+                    document.querySelector('.banner-container').style.backgroundSize = '100% auto';
+                    document.querySelector('.banner-container').style.backgroundPosition = 'center';
                     document.querySelector('.banner-container').style.backgroundRepeat = 'no-repeat';
-                    // Initialiser les positions du modal
-                    modalPosX = bannerPosX;
-                    modalPosY = bannerPosY;
-                    modalZoom = bannerZoom;
-                    modalRotate = bannerRotate;
-                    visibleAreaLeft = (bannerPosX / 100) * 200;
-                    visibleAreaTop = (bannerPosY / 100) * 50;
                 } else {
                     document.querySelector('.banner-container').style.backgroundImage = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
                     document.querySelector('.position-controls').style.display = 'none';
