@@ -51,6 +51,10 @@
         let bannerZoom = 1;
         let bannerRotate = 0;
 
+        let avatarZoom = 1;
+        let avatarPosX = 50;
+        let avatarPosY = 50;
+
         // Charger les données du profil
         fetch('/api/profile')
             .then(response => response.json())
@@ -121,6 +125,38 @@
         `;
         document.body.appendChild(positionModal);
 
+        // Modal pour positionner l'avatar
+        const avatarPositionModal = document.createElement('div');
+        avatarPositionModal.id = 'avatar-position-modal';
+        avatarPositionModal.style.position = 'fixed';
+        avatarPositionModal.style.top = '0';
+        avatarPositionModal.style.left = '0';
+        avatarPositionModal.style.width = '100%';
+        avatarPositionModal.style.height = '100%';
+        avatarPositionModal.style.background = 'rgba(0,0,0,0.8)';
+        avatarPositionModal.style.display = 'none';
+        avatarPositionModal.style.alignItems = 'center';
+        avatarPositionModal.style.justifyContent = 'center';
+        avatarPositionModal.style.zIndex = '2000';
+        avatarPositionModal.innerHTML = `
+            <div style="background: #36393f; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-align: center; max-width: 400px; color: #dcddde;">
+                <h3 style="margin-bottom: 10px; color: #ffffff;">Positionnez votre avatar</h3>
+                <p style="margin-bottom: 20px; color: #b9bbbe; font-size: 14px;">Cliquez et glissez sur l'image pour la déplacer. Utilisez la molette de la souris pour zoomer.</p>
+                <div id="modal-avatar" style="width: 200px; height: 200px; margin: 20px auto; background: center; background-size: auto; background-repeat: no-repeat; border: 2px solid #202225; border-radius: 50%; cursor: move; position: relative; overflow: hidden;">
+                    <div id="avatar-visible-area" style="position: absolute; top: 50%; left: 50%; width: 100px; height: 100px; border: 2px solid #ffffff; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; background: rgba(0,0,0,0.3);"></div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; justify-content: center; margin-bottom: 20px;">
+                    <span style="color: #b9bbbe; font-size: 14px;">Zoom image:</span>
+                    <input type="range" id="avatar-zoom-slider" min="0.5" max="3" step="0.1" value="1" style="flex: 1; max-width: 200px;">
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button id="avatar-apply-position" style="padding: 10px 20px; background: #43b581; color: white; border: none; border-radius: 4px; cursor: pointer; transition: background 0.2s;">Appliquer</button>
+                    <button id="avatar-cancel-position" style="padding: 10px 20px; background: #f04747; color: white; border: none; border-radius: 4px; cursor: pointer; transition: background 0.2s;">Annuler</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(avatarPositionModal);
+
         let modalZoom = 1;
         let modalPosX = 50;
         let modalPosY = 50;
@@ -128,6 +164,10 @@
         let w = 600 / modalZoom;
         let h = w * 0.25;
         let minLeft, maxLeft, minTop, maxTop;
+
+        let avatarModalZoom = 1;
+        let avatarModalPosX = 50;
+        let avatarModalPosY = 50;
 
         function updateLimits() {
             minLeft = Math.max(0, (600 - w) / 2);
@@ -164,8 +204,8 @@
 
         document.getElementById('zoom-slider').addEventListener('input', (e) => {
             modalZoom = parseFloat(e.target.value);
-            w = 400 / modalZoom;
-            h = w * 0.5;
+            w = 600 / modalZoom;
+            h = w * 0.25;
             updateLimits();
             document.getElementById('modal-banner').style.backgroundSize = `${100 / modalZoom}% auto`;
             // Vérifier si la position actuelle couvre visible-area, sinon recentrer
@@ -280,16 +320,96 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
+                    avatarZoom = 1;
+                    avatarPosX = 50;
+                    avatarPosY = 50;
+                    document.getElementById('modal-avatar').style.backgroundImage = `url(${e.target.result})`;
+                    document.getElementById('modal-avatar').style.backgroundSize = `${100 / avatarZoom}% auto`;
+                    document.getElementById('modal-avatar').style.backgroundPosition = 'center';
+                    document.getElementById('avatar-zoom-slider').value = avatarZoom;
+                    avatarPositionModal.style.display = 'flex';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Event listeners pour la modal avatar
+        document.getElementById('avatar-zoom-slider').addEventListener('input', (e) => {
+            avatarModalZoom = parseFloat(e.target.value);
+            document.getElementById('modal-avatar').style.backgroundSize = `${100 / avatarModalZoom}% auto`;
+        });
+
+        let avatarIsDragging = false;
+        let avatarStartX, avatarStartY;
+
+        document.getElementById('modal-avatar').addEventListener('mousedown', (e) => {
+            avatarIsDragging = true;
+            avatarStartX = e.clientX;
+            avatarStartY = e.clientY;
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (avatarIsDragging) {
+                const deltaX = e.clientX - avatarStartX;
+                const deltaY = e.clientY - avatarStartY;
+                avatarModalPosX += deltaX / 2;
+                avatarModalPosY += deltaY / 2;
+                document.getElementById('modal-avatar').style.backgroundPosition = `${avatarModalPosX}% ${avatarModalPosY}%`;
+                avatarStartX = e.clientX;
+                avatarStartY = e.clientY;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            avatarIsDragging = false;
+        });
+
+        document.getElementById('modal-avatar').addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (e.deltaY < 0) {
+                avatarModalZoom = Math.min(3, avatarModalZoom * 1.1);
+            } else {
+                avatarModalZoom = Math.max(0.5, avatarModalZoom / 1.1);
+            }
+            document.getElementById('modal-avatar').style.backgroundSize = `${100 / avatarModalZoom}% auto`;
+            document.getElementById('avatar-zoom-slider').value = avatarModalZoom;
+        });
+
+        document.getElementById('avatar-apply-position').addEventListener('click', () => {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 100;
+                canvas.height = 100;
+                const ctx = canvas.getContext('2d');
+                const scale = avatarModalZoom;
+                const posX = avatarModalPosX;
+                const posY = avatarModalPosY;
+                const imgWidth = img.width / scale;
+                const imgHeight = img.height / scale;
+                const offsetX = (posX / 100) * (200 - imgWidth);
+                const offsetY = (posY / 100) * (200 - imgHeight);
+                ctx.drawImage(img, -offsetX, -offsetY, img.width / scale, img.height / scale);
+                canvas.toBlob((blob) => {
+                    const croppedFile = new File([blob], 'avatar.jpg', {type: 'image/jpeg'});
                     const avatar = document.getElementById('profile-pic-preview');
-                    avatar.src = e.target.result;
+                    avatar.src = canvas.toDataURL();
                     avatar.style.display = 'block';
                     avatar.style.backgroundColor = '';
                     avatar.style.color = '';
                     avatar.style.fontSize = '';
                     avatar.textContent = '';
-                };
-                reader.readAsDataURL(file);
-            }
+                    window.croppedAvatarFile = croppedFile;
+                    avatarPositionModal.style.display = 'none';
+                });
+            };
+            const bgImage = document.getElementById('modal-avatar').style.backgroundImage;
+            img.src = bgImage.slice(5, -2);
+        });
+
+        document.getElementById('avatar-cancel-position').addEventListener('click', () => {
+            avatarPositionModal.style.display = 'none';
         });
 
         // Sauvegarder
@@ -307,7 +427,9 @@
             if (bannerInput.files[0]) {
                 formData.append('banner', bannerInput.files[0]);
             }
-            if (profilePicInput.files[0]) {
+            if (window.croppedAvatarFile) {
+                formData.append('profile_pic', window.croppedAvatarFile);
+            } else if (profilePicInput.files[0]) {
                 formData.append('profile_pic', profilePicInput.files[0]);
             }
             formData.append('bio', bio);
