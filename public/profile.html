@@ -62,9 +62,10 @@
                 bannerRotate = data.banner_rotate || 0;
                 if (data.banner) {
                     document.querySelector('.banner-container').style.backgroundImage = `url('/uploads/${data.banner}')`;
-                    document.querySelector('.banner-container').style.backgroundSize = `${100 / bannerZoom}% auto`;
+                    document.querySelector('.banner-container').style.backgroundSize = `${600 / bannerZoom}px auto`;
                     document.querySelector('.banner-container').style.backgroundPosition = `${bannerPosX}% ${bannerPosY}%`;
                     document.querySelector('.banner-container').style.transform = `rotate(${bannerRotate}deg)`;
+                    document.querySelector('.banner-container').style.backgroundRepeat = 'no-repeat';
                     // Initialiser les positions du modal
                     modalPosX = bannerPosX;
                     modalPosY = bannerPosY;
@@ -132,8 +133,16 @@
         let modalPosX = 50;
         let modalPosY = 50;
         let modalRotate = 0;
-        let w = 400 / modalZoom;
-        let h = w * 0.5;
+        let w = 600 / modalZoom;
+        let h = w * 0.25;
+        let minLeft, maxLeft, minTop, maxTop;
+
+        function updateLimits() {
+            minLeft = Math.max(0, (600 - w) / 2);
+            maxLeft = Math.min(200, (600 - w) / 2 + w - 400);
+            minTop = Math.max(0, (150 - h) / 2);
+            maxTop = Math.min(50, (150 - h) / 2 + h - 100);
+        }
 
 
 
@@ -143,14 +152,15 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    modalZoom = 1;
+                    modalZoom = 0.5;
                     modalPosX = 50;
                     modalPosY = 50;
                     modalRotate = 0;
-                    w = 400 / modalZoom;
-                    h = w * 0.5;
+                    w = 600 / modalZoom;
+                    h = w * 0.25;
+                    updateLimits();
                     document.getElementById('modal-banner').style.backgroundImage = `url(${e.target.result})`;
-                    document.getElementById('modal-banner').style.backgroundSize = `${w}px auto`;
+                    document.getElementById('modal-banner').style.backgroundSize = `${100 / modalZoom}% auto`;
                     document.getElementById('modal-banner').style.backgroundPosition = 'center';
                     document.getElementById('modal-banner').style.transform = `rotate(${modalRotate}deg)`;
                     document.getElementById('zoom-slider').value = modalZoom;
@@ -164,7 +174,18 @@
             modalZoom = parseFloat(e.target.value);
             w = 400 / modalZoom;
             h = w * 0.5;
-            document.getElementById('modal-banner').style.backgroundSize = `${w}px auto`;
+            updateLimits();
+            document.getElementById('modal-banner').style.backgroundSize = `${100 / modalZoom}% auto`;
+            // Vérifier si la position actuelle couvre visible-area, sinon recentrer
+            const leftX = (modalPosX / 100) * (600 - w);
+            const rightX = leftX + w;
+            const leftY = (modalPosY / 100) * (150 - h);
+            const rightY = leftY + h;
+            if (!(leftX <= 100 && rightX >= 500 && leftY <= 25 && rightY >= 125)) {
+                modalPosX = 50;
+                modalPosY = 50;
+                document.getElementById('modal-banner').style.backgroundPosition = 'center';
+            }
         });
 
         document.getElementById('modal-rotate').addEventListener('click', () => {
@@ -215,8 +236,8 @@
             if (isDragging) {
                 const deltaX = e.clientX - startX;
                 const deltaY = e.clientY - startY;
-                const newModalPosX = modalPosX - deltaX / 4;
-                const newModalPosY = modalPosY - deltaY / 4;
+                const newModalPosX = modalPosX - deltaX / 2;
+                const newModalPosY = modalPosY - deltaY / 2;
                 const leftX = (newModalPosX / 100) * (600 - w);
                 const rightX = leftX + w;
                 const leftY = (newModalPosY / 100) * (150 - h);
@@ -245,9 +266,21 @@
             } else {
                 modalZoom = Math.max(0.5, modalZoom / 1.1);
             }
-            document.getElementById('modal-banner').style.backgroundSize = `${400 / modalZoom}px auto`;
+            w = 600 / modalZoom;
+            h = w * 0.5;
+            document.getElementById('modal-banner').style.backgroundSize = `${100 / modalZoom}% auto`;
             document.getElementById('zoom-slider').value = modalZoom;
             updateLimits();
+            // Vérifier si la position actuelle couvre visible-area, sinon recentrer
+            const leftX = (modalPosX / 100) * (600 - w);
+            const rightX = leftX + w;
+            const leftY = (modalPosY / 100) * (150 - h);
+            const rightY = leftY + h;
+            if (!(leftX <= 100 && rightX >= 500 && leftY <= 25 && rightY >= 125)) {
+                modalPosX = 50;
+                modalPosY = 50;
+                document.getElementById('modal-banner').style.backgroundPosition = 'center';
+            }
         });
 
         document.getElementById('profile_pic').addEventListener('change', function(event) {
