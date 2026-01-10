@@ -114,7 +114,7 @@
                 </div>
                 <div style="display: flex; align-items: center; gap: 10px; justify-content: center; margin-bottom: 20px;">
                     <span style="color: #b9bbbe; font-size: 14px;">Zoom image:</span>
-                    <input type="range" id="zoom-slider" min="0.5" max="1" step="0.1" value="1" style="flex: 1; max-width: 200px;">
+                    <input type="range" id="zoom-slider" min="1.5" max="2" step="0.1" value="1.5" style="flex: 1; max-width: 200px;">
                     <button id="modal-rotate" style="padding: 8px 16px; background: #5865f2; color: white; border: none; border-radius: 4px; cursor: pointer; transition: background 0.2s;">Rotate</button>
                 </div>
                 <div style="display: flex; gap: 10px; justify-content: center;">
@@ -157,24 +157,17 @@
         `;
         document.body.appendChild(avatarPositionModal);
 
-        let modalZoom = 1;
+        let modalZoom = 1.5;
         let modalPosX = 50;
         let modalPosY = 50;
         let modalRotate = 0;
-        let w = 600 / modalZoom;
-        let h = w * 0.25;
-        let minLeft, maxLeft, minTop, maxTop;
+        let minZoom = 0.5;
 
         let avatarModalZoom = 1;
         let avatarModalPosX = 50;
         let avatarModalPosY = 50;
 
-        function updateLimits() {
-            minLeft = Math.max(0, (600 - w) / 2);
-            maxLeft = Math.min(200, (600 - w) / 2 + w - 400);
-            minTop = Math.max(0, (150 - h) / 2);
-            maxTop = Math.min(50, (150 - h) / 2 + h - 100);
-        }
+
 
 
 
@@ -184,19 +177,21 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    modalZoom = 0.5;
-                    modalPosX = 50;
-                    modalPosY = 50;
-                    modalRotate = 0;
-                    w = 600 / modalZoom;
-                    h = w * 0.25;
-                    updateLimits();
-                    document.getElementById('modal-banner').style.backgroundImage = `url(${e.target.result})`;
-                    document.getElementById('modal-banner').style.backgroundSize = `${100 / modalZoom}% auto`;
-                    document.getElementById('modal-banner').style.backgroundPosition = 'center';
-                    document.getElementById('modal-banner').style.transform = `rotate(${modalRotate}deg)`;
-                    document.getElementById('zoom-slider').value = modalZoom;
-                    positionModal.style.display = 'flex';
+                    const img = new Image();
+                    img.onload = function() {
+                        minZoom = Math.max(1.5, 600 / img.width);
+                        modalZoom = Math.max(minZoom, 1.5);
+                        modalPosX = 50;
+                        modalPosY = 50;
+                        modalRotate = 0;
+                        document.getElementById('modal-banner').style.backgroundImage = `url(${e.target.result})`;
+                        document.getElementById('modal-banner').style.backgroundSize = `${100 / modalZoom}% auto`;
+                        document.getElementById('modal-banner').style.backgroundPosition = `${modalPosX}% ${modalPosY}%`;
+                        document.getElementById('modal-banner').style.transform = `rotate(${modalRotate}deg)`;
+                        document.getElementById('zoom-slider').value = 2.5 - modalZoom;
+                        positionModal.style.display = 'flex';
+                    };
+                    img.src = e.target.result;
                 };
                 reader.readAsDataURL(file);
             }
@@ -204,20 +199,8 @@
 
         document.getElementById('zoom-slider').addEventListener('input', (e) => {
             modalZoom = parseFloat(e.target.value);
-            w = 600 / modalZoom;
-            h = w * 0.25;
-            updateLimits();
             document.getElementById('modal-banner').style.backgroundSize = `${100 / modalZoom}% auto`;
-            // Vérifier si la position actuelle couvre visible-area, sinon recentrer
-            const leftX = (modalPosX / 100) * (600 - w);
-            const rightX = leftX + w;
-            const leftY = (modalPosY / 100) * (150 - h);
-            const rightY = leftY + h;
-            if (!(leftX <= 100 && rightX >= 500 && leftY <= 25 && rightY >= 125)) {
-                modalPosX = 50;
-                modalPosY = 50;
-                document.getElementById('modal-banner').style.backgroundPosition = 'center';
-            }
+            document.getElementById('modal-banner').style.backgroundPosition = `${modalPosX}% ${modalPosY}%`;
         });
 
         document.getElementById('modal-rotate').addEventListener('click', () => {
@@ -268,17 +251,11 @@
             if (isDragging) {
                 const deltaX = e.clientX - startX;
                 const deltaY = e.clientY - startY;
-                const newModalPosX = modalPosX - deltaX / 2;
-                const newModalPosY = modalPosY - deltaY / 2;
-                const leftX = (newModalPosX / 100) * (600 - w);
-                const rightX = leftX + w;
-                const leftY = (newModalPosY / 100) * (150 - h);
-                const rightY = leftY + h;
-                if (leftX <= 100 && rightX >= 500 && leftY <= 25 && rightY >= 125) {
-                    modalPosX = newModalPosX;
-                    modalPosY = newModalPosY;
-                    document.getElementById('modal-banner').style.backgroundPosition = `${modalPosX}% ${modalPosY}%`;
-                }
+                const newModalPosX = modalPosX - deltaX;
+                const newModalPosY = modalPosY - deltaY;
+                modalPosX = Math.max(0, Math.min(100, newModalPosX));
+                modalPosY = Math.max(0, Math.min(100, newModalPosY));
+                document.getElementById('modal-banner').style.backgroundPosition = `${modalPosX}% ${modalPosY}%`;
                 startX = e.clientX;
                 startY = e.clientY;
             }
@@ -294,25 +271,12 @@
         document.getElementById('modal-banner').addEventListener('wheel', (e) => {
             e.preventDefault();
             if (e.deltaY < 0) {
-                modalZoom = Math.min(1, modalZoom * 1.1);
+                modalZoom = Math.max(1.5, modalZoom / 1.1);
             } else {
-                modalZoom = Math.max(0.5, modalZoom / 1.1);
+                modalZoom = Math.min(2, modalZoom * 1.1);
             }
-            w = 600 / modalZoom;
-            h = w * 0.5;
             document.getElementById('modal-banner').style.backgroundSize = `${100 / modalZoom}% auto`;
             document.getElementById('zoom-slider').value = modalZoom;
-            updateLimits();
-            // Vérifier si la position actuelle couvre visible-area, sinon recentrer
-            const leftX = (modalPosX / 100) * (600 - w);
-            const rightX = leftX + w;
-            const leftY = (modalPosY / 100) * (150 - h);
-            const rightY = leftY + h;
-            if (!(leftX <= 100 && rightX >= 500 && leftY <= 25 && rightY >= 125)) {
-                modalPosX = 50;
-                modalPosY = 50;
-                document.getElementById('modal-banner').style.backgroundPosition = 'center';
-            }
         });
 
         document.getElementById('profile_pic').addEventListener('change', function(event) {
@@ -353,9 +317,18 @@
             if (avatarIsDragging) {
                 const deltaX = e.clientX - avatarStartX;
                 const deltaY = e.clientY - avatarStartY;
-                avatarModalPosX += deltaX / 2;
-                avatarModalPosY += deltaY / 2;
-                document.getElementById('modal-avatar').style.backgroundPosition = `${avatarModalPosX}% ${avatarModalPosY}%`;
+                const newPosX = avatarModalPosX + deltaX;
+                const newPosY = avatarModalPosY + deltaY;
+                const imgWidth = 200 / avatarModalZoom;
+                const leftX = (newPosX / 100) * (200 - imgWidth);
+                const rightX = leftX + imgWidth;
+                const leftY = (newPosY / 100) * (200 - imgWidth);
+                const rightY = leftY + imgWidth;
+                if (leftX <= 50 && rightX >= 150 && leftY <= 50 && rightY >= 150) {
+                    avatarModalPosX = newPosX;
+                    avatarModalPosY = newPosY;
+                    document.getElementById('modal-avatar').style.backgroundPosition = `${avatarModalPosX}% ${avatarModalPosY}%`;
+                }
                 avatarStartX = e.clientX;
                 avatarStartY = e.clientY;
             }
@@ -388,8 +361,8 @@
                 const posY = avatarModalPosY;
                 const imgWidth = img.width / scale;
                 const imgHeight = img.height / scale;
-                const offsetX = (posX / 100) * (200 - imgWidth);
-                const offsetY = (posY / 100) * (200 - imgHeight);
+                const offsetX = ((posX - 50) / 50) * Math.max(0, (200 - imgWidth) / 2) + Math.max(0, (200 - imgWidth) / 2);
+                const offsetY = ((posY - 50) / 50) * Math.max(0, (200 - imgHeight) / 2) + Math.max(0, (200 - imgHeight) / 2);
                 ctx.drawImage(img, -offsetX, -offsetY, img.width / scale, img.height / scale);
                 canvas.toBlob((blob) => {
                     const croppedFile = new File([blob], 'avatar.jpg', {type: 'image/jpeg'});
